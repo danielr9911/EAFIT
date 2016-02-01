@@ -1,0 +1,106 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'calculator'
+require 'calcex'
+
+$calc = Calculator.new()
+
+prefEnv = false
+interactive = true
+countVar=0
+
+if ARGV[0]=="-e"
+  prefEnv=true
+  countVar+=1
+end
+
+isVar=false
+ARGV.each do |arg|
+  if arg=="-v"
+    isVar=true
+    countVar+=1
+  elsif isVar and arg!=nil
+    index=arg.index('=')
+    name=arg[0,index]
+    value=arg[index+1,arg.length]
+    
+    $calc.assign(name,value)
+    isVar=false
+    countVar+=1
+  end
+end
+
+i=0
+while i<countVar
+  ARGV.shift
+  i+=1
+end
+
+ENV.each do |k,v|
+  if k.match(/CALCVAR/)
+    name = k.delete("CALCVAR")
+    if prefEnv
+      $calc.assign(name,v)
+    elsif $calc.memory2[name]==0
+      $calc.assign(name,v)
+    end
+  end
+end
+$calc.assigns.clear
+$calc.countAssigns=0
+
+if ARGV.length!=0
+  interactive=false
+  lines = ARGF.readlines
+  lines.each do |line|
+
+    if line == "\n"
+      puts "ParseError, Expected expresion"
+    else
+      print "=> " + $calc.eval(line).to_s
+      if $calc.listAssigns!=""
+        puts " [" + $calc.listAssigns + "]"
+      else
+        puts ""
+      end
+      $calc.assigns.clear
+      $calc.countAssigns = 0
+    end
+  end
+end
+
+if interactive
+  begin
+    $stdout.print "> "
+    $stdout.flush
+    
+    text = gets
+    
+    if !text
+      break
+    end
+    if text=="\n"
+      puts "ParseError, Expected expresion"
+    else
+      
+      print "=> " + $calc.eval(text).to_s
+      if $calc.listAssigns!=""
+        puts " [" + $calc.listAssigns + "]"
+      else
+        puts ""
+      end
+      $calc.assigns.clear
+      $calc.countAssigns = 0
+    end
+  rescue ParseError
+    puts "Parse Error"
+  rescue UnrecognizedTokenException
+    puts "UnrecognizedTokenException"
+  rescue
+    puts "Unkown exception"
+
+
+  end until (false)
+
+end
